@@ -49,8 +49,6 @@ export default function LoginPage() {
       const token = tokenCandidate;
 
       // 4) Decode the JWT payload client-side to grab the user ID.
-      //    JWTs are Base64-encoded strings of the form: header.payload.signature
-      //    We split on '.', take [1], Base64 decode, and parse JSON.
       let decoded: any;
       try {
         const base64Payload = token.split('.')[1];
