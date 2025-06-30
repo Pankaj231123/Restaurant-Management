@@ -69,7 +69,7 @@ export default function PaymentPage() {
       toast.success(`Payment ${res.data.status}`);
       reset();
       setIsOpen(false);
-      router.push('/'); // Redirect to homepage after payment
+      router.push('/authenticated'); // Redirect to authenticated page after payment
     } catch (err: any) {
       console.error('Payment error:', err);
       toast.error(err?.response?.data?.message || 'Payment failed');

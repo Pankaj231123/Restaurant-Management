@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation'; // ✅ include useSearchParams
 import Cookies from 'js-cookie';
 import Link from 'next/link';
 
@@ -39,29 +39,37 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState<{ name: string; amount: number }>({
     name: '',
     amount: 0,
   });
-
   const [menuOpen, setMenuOpen] = useState(false);
 
   const router = useRouter();
+  const searchParams = useSearchParams(); // ✅ get URL query params
 
   useEffect(() => {
+    // ✅ Read menuItem from URL
+    const menuItemFromQuery = searchParams?.get('menuItem');
+    if (menuItemFromQuery) {
+      const parsed = parseInt(menuItemFromQuery);
+      if (!isNaN(parsed)) {
+        setMenuItem(parsed);
+      }
+    }
+
     const token = Cookies.get('token');
     if (!token) {
       router.push('/auth/login');
       return;
     }
+
     try {
       const decoded = decodeJwt(token);
       if (!decoded?.sub) throw new Error('Token missing user ID');
       setUserId(decoded.sub);
 
-      // Fetch profile to get username
       axios
         .get<UserProfile>('http://localhost:3001/users/profile', {
           headers: { Authorization: `Bearer ${token}` },
@@ -77,7 +85,7 @@ export default function OrderPage() {
       Cookies.remove('token');
       router.push('/auth/login');
     }
-  }, [router]);
+  }, [router, searchParams]); // ✅ include searchParams in deps
 
   const handleOrder = async () => {
     setLoading(true);
@@ -94,7 +102,7 @@ export default function OrderPage() {
       const res = await axios.post(
         'http://localhost:3001/order',
         {
-          menuItem: menuItem.toString(), // <-- cast number to string here
+          menuItem: menuItem.toString(),
           quantity,
           userId,
         },
@@ -112,7 +120,6 @@ export default function OrderPage() {
         setShowModal(true);
         setQuantity(1);
         setMenuItem(1);
-
         router.push('/payment');
       } else {
         setError('Failed to place order.');
@@ -141,22 +148,15 @@ export default function OrderPage() {
               FOODIE
             </span>
           </Link>
-
           <div className="hidden md:flex items-center gap-4">
             <span className="text-gray-700 dark:text-gray-300">Hello, {username}</span>
           </div>
-
           <button
-            className="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="md:hidden p-2 rounded-md"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
           >
-            <svg
-              className="w-6 h-6 text-gray-800 dark:text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-6 h-6 text-gray-800 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {menuOpen ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               ) : (
@@ -170,26 +170,11 @@ export default function OrderPage() {
               menuOpen ? 'translate-x-0' : '-translate-x-full'
             } md:translate-x-0`}
           >
-            <Link
-              href="/menu"
-              className="text-gray-700 dark:text-gray-300 hover:text-indigo-500 transition-colors"
-            >
-              Menu
-            </Link>
-            <Link
-              href="/order"
-              className="text-gray-700 dark:text-gray-300 hover:text-indigo-500 transition-colors"
-            >
-              Orders
-            </Link>
-            <Link
-              href="/contact"
-              className="text-gray-700 dark:text-gray-300 hover:text-indigo-500 transition-colors"
-            >
-              Contact
-            </Link>
+            <Link href="/menu" className="text-gray-700 dark:text-gray-300 hover:text-indigo-500">Menu</Link>
+            <Link href="/order" className="text-gray-700 dark:text-gray-300 hover:text-indigo-500">Orders</Link>
+            <Link href="/contact" className="text-gray-700 dark:text-gray-300 hover:text-indigo-500">Contact</Link>
             <button
-              className="mt-4 md:mt-0 w-full md:w-auto bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md transition-all"
+              className="mt-4 md:mt-0 bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-md"
               onClick={() => {
                 Cookies.remove('token');
                 router.push('/auth/login');
@@ -201,22 +186,13 @@ export default function OrderPage() {
         </div>
       </header>
 
-      {/* Main Order Form */}
+      {/* Order Form */}
       <main className="bg-gray-50 dark:bg-gray-800 py-12">
         <div className="max-w-md mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
           <div className="p-8">
-            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6">
-              Place Your Order
-            </h2>
-
-            {error && (
-              <div className="bg-red-50 text-red-800 px-4 py-2 rounded-md mb-4">{error}</div>
-            )}
-            {success && (
-              <div className="bg-green-50 text-green-800 px-4 py-2 rounded-md mb-4">
-                Order placed successfully!
-              </div>
-            )}
+            <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white mb-6">Place Your Order</h2>
+            {error && <div className="bg-red-50 text-red-800 px-4 py-2 rounded-md mb-4">{error}</div>}
+            {success && <div className="bg-green-50 text-green-800 px-4 py-2 rounded-md mb-4">Order placed successfully!</div>}
 
             <div className="mb-6 flex justify-center">
               <div className="relative w-32 h-32 overflow-hidden rounded-lg shadow-inner bg-gray-100">
@@ -233,12 +209,7 @@ export default function OrderPage() {
 
             <div className="space-y-5">
               <div>
-                <label
-                  htmlFor="menuItem"
-                  className="block text-gray-700 dark:text-gray-300 font-medium mb-1"
-                >
-                  Menu Item ID
-                </label>
+                <label htmlFor="menuItem" className="block text-gray-700 dark:text-gray-300 font-medium mb-1">Menu Item ID</label>
                 <input
                   id="menuItem"
                   type="number"
@@ -246,18 +217,13 @@ export default function OrderPage() {
                   max={10}
                   value={menuItem}
                   onChange={(e) => setMenuItem(Number(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="Enter item number"
                 />
               </div>
 
               <div>
-                <label
-                  htmlFor="quantity"
-                  className="block text-gray-700 dark:text-gray-300 font-medium mb-1"
-                >
-                  Quantity
-                </label>
+                <label htmlFor="quantity" className="block text-gray-700 dark:text-gray-300 font-medium mb-1">Quantity</label>
                 <input
                   id="quantity"
                   type="number"
@@ -265,7 +231,7 @@ export default function OrderPage() {
                   max={10}
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="How many?"
                 />
               </div>
@@ -283,22 +249,16 @@ export default function OrderPage() {
         </div>
       </main>
 
-      {/* Order Confirmation Modal */}
+      {/* Confirmation Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 w-11/12 max-w-sm">
-            <h3 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-4">
-              Order Summary
-            </h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-2">
-              <span className="font-medium">Item:</span> {modalData.name}
-            </p>
-            <p className="text-gray-700 dark:text-gray-300 mb-4">
-              <span className="font-medium">Quantity:</span> {modalData.amount}
-            </p>
+            <h3 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-4">Order Summary</h3>
+            <p className="text-gray-700 dark:text-gray-300 mb-2"><span className="font-medium">Item:</span> {modalData.name}</p>
+            <p className="text-gray-700 dark:text-gray-300 mb-4"><span className="font-medium">Quantity:</span> {modalData.amount}</p>
             <div className="flex justify-center">
               <button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md transition-all"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md"
                 onClick={() => setShowModal(false)}
               >
                 Close
@@ -318,21 +278,9 @@ export default function OrderPage() {
           <div>
             <h5 className="font-semibold mb-2">Services</h5>
             <ul className="space-y-1">
-              <li>
-                <a href="#" className="hover:underline text-gray-200">
-                  Order Management
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline text-gray-200">
-                  Menu Updates
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:underline text-gray-200">
-                  Today's Offer
-                </a>
-              </li>
+              <li><a href="#" className="hover:underline text-gray-200">Order Management</a></li>
+              <li><a href="#" className="hover:underline text-gray-200">Menu Updates</a></li>
+              <li><a href="#" className="hover:underline text-gray-200">Today's Offer</a></li>
             </ul>
           </div>
           <div>
@@ -340,15 +288,11 @@ export default function OrderPage() {
             <ul className="space-y-1">
               <li className="flex items-center gap-2">
                 <span>📧</span>
-                <a href="mailto:amipankaj231@gmail.com" className="hover:underline text-gray-200">
-                  amipankaj231@gmail.com
-                </a>
+                <a href="mailto:amipankaj231@gmail.com" className="hover:underline text-gray-200">amipankaj231@gmail.com</a>
               </li>
               <li className="flex items-center gap-2">
                 <span>📞</span>
-                <a href="tel:+8801737890284" className="hover:underline text-gray-200">
-                  +880-1737890284
-                </a>
+                <a href="tel:+8801737890284" className="hover:underline text-gray-200">+880-1737890284</a>
               </li>
             </ul>
           </div>
