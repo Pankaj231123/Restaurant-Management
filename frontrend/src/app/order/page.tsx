@@ -120,7 +120,7 @@ export default function OrderPage() {
         setShowModal(true);
         setQuantity(1);
         setMenuItem(1);
-        router.push('/payment');
+        router.push(`/payment?name=Menu%20Item%20${menuItem}&amount=${quantity}`);
       } else {
         setError('Failed to place order.');
       }

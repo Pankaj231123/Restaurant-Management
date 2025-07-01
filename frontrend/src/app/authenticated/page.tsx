@@ -204,7 +204,7 @@ const AuthenticatedPage: React.FC = () => {
 
 
             <Link
-              href="/menu"
+              href="/menu1"
               className="text-gray-700 hover:text-indigo-500 transition-colors"
             >
               Menu
@@ -453,7 +453,7 @@ const AuthenticatedPage: React.FC = () => {
             <ul className="space-y-4">
               <li>
                 <Link
-                  href="/menu"
+                  href="/menu1"
                   className="flex items-center gap-3 bg-indigo-50 hover:bg-indigo-100 p-4 rounded-lg transition"
                 >
                   <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
